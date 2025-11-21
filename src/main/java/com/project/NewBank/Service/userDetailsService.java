@@ -7,17 +7,22 @@ package com.project.NewBank.Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-@Service
-class userDetailsService {
-    @Override
-    public static UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // TODO Auto-generated method stub
-        @Autowired
-        private UserRepository userRepo;
+import com.project.NewBank.model.User;
+import com.project.NewBank.repository.UserRepository;
 
-        User user = userRepo.findByEmail(email);
+@Service
+public class userDetailsService implements UserDetailsService{
+    @Autowired
+        UserRepository userRepo;
+    @Override
+    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+        
+
+        User user = userRepo.findByusername(userName);
 
         if(user == null){
         throw new UnsupportedOperationException("Unimplemented method 'loadUserByUsername'");

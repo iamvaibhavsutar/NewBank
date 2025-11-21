@@ -3,9 +3,12 @@ package com.project.NewBank.Service;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +16,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @Service
 public class JwtService {
+    @Autowired
+    userDetailsService detailsService;
 
     private final String SECRET_KEY = "your_secret_key_here";
     
@@ -41,15 +47,19 @@ public class JwtService {
     private String extractUsername(String token) {
         return extractClaims(token, Claims:: getSubject);
     }
-
     public String generateToken(Map<String, Object> map, UserDetails userDetails) {
-        UserDetails user = detailsService.loadUserByUsername(userDetails.getUsername());
-        Map<String, Object> claims = new Map<>;
+        UserDetails user;
+        try {
+            user = detailsService.loadUserByUsername(userDetails.getUsername());
+        } catch (UsernameNotFoundException e) {
+            throw new RuntimeException("User not found", e);
+        }
+        Map<String, Object> claims = new HashMap<>();
          
-        map.put("roles",user.getAuthorities.stream().collect(Collectors.toList()));
+        map.put("roles", user.getAuthorities().stream().collect(Collectors.toList()));
         return createToken(claims, userDetails);
     }
-    public String createToken(Map<String, Object> Claims, UserDetails userDetails) {
+    public String createToken(Map<String, Object> claims, UserDetails userDetails) {
         return Jwts.builder()
             .setClaims(claims)
             .setSubject(userDetails.getUsername())
