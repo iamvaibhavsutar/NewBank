@@ -21,8 +21,7 @@ public class LoginController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody SignupRequest signupRequest) {
-        //TODO: process POST request
-        
+       
         return ResponseEntity.ok("Signup Successful");
     }
     

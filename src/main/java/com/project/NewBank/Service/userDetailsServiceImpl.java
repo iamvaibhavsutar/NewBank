@@ -15,7 +15,7 @@ import com.project.NewBank.model.User;
 import com.project.NewBank.repository.UserRepository;
 
 @Service
-public class userDetailsService implements UserDetailsService{
+public class userDetailsServiceImpl implements UserDetailsService{
     @Autowired
         UserRepository userRepo;
     @Override
@@ -25,7 +25,7 @@ public class userDetailsService implements UserDetailsService{
         User user = userRepo.findByusername(userName);
 
         if(user == null){
-        throw new UnsupportedOperationException("Unimplemented method 'loadUserByUsername'");
+        throw new UsernameNotFoundException("User not found");
         }
         return null;
     }
