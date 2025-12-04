@@ -22,3 +22,4 @@ public class SignupRequest {
 
     private Set<String> role;
 }
+

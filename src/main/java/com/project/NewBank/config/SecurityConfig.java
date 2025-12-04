@@ -12,13 +12,13 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.project.NewBank.Service.userDetailsService;
 import com.project.NewBank.filter.JwtFilter;
 
 @SuppressWarnings("deprecation")
@@ -27,7 +27,7 @@ import com.project.NewBank.filter.JwtFilter;
 @EnableGlobalMethodSecurity(prePostEnabled = true) 
 public class SecurityConfig {
     @Autowired
-    userDetailsService details;
+    private UserDetailsService details;
     @Autowired
     private JwtFilter filter;
     
