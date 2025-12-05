@@ -1,45 +1,94 @@
 package com.project.NewBank.Service.Login;
 
-import org.springframework.http.ResponseEntity;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.project.NewBank.Security.Response.LoginResponse;
 import com.project.NewBank.Security.Response.SignupResponse;
 import com.project.NewBank.Security.request.LoginRequest;
 import com.project.NewBank.Security.request.SignupRequest;
+import com.project.NewBank.Service.Security.JwtService;
+import com.project.NewBank.model.Role;
+import com.project.NewBank.model.RoleName;
+import com.project.NewBank.model.User;
+import com.project.NewBank.repository.UserRepository;
 
 @Service
 public class LoginService {
 
-    public LoginResponse login(LoginRequest loginRequest) {
-        // Assuming you have an AuthenticationManager bean configured
-        AuthenticationManager auth= null; 
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
+    public LoginService(AuthenticationManager authenticationManager, JwtService jwtService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public LoginResponse login(LoginRequest loginRequest) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword());
 
-        try {
-            auth.authenticate(authenticationToken);
-        } catch (Exception e) {
-            // Handle authentication failure
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Login Failed: " + e.getMessage());
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof UserDetails)) {
+            throw new RuntimeException("Authentication did not return a valid UserDetails principal");
         }
+
+        UserDetails userDetails = (UserDetails) principal;
+
+        String token = jwtService.generateToken(new HashMap<>(), userDetails);
+
         LoginResponse response = new LoginResponse();
+        response.setUsername(userDetails.getUsername());
+        response.setRoles(userDetails.getAuthorities().stream().map(a -> a.getAuthority()).collect(Collectors.toList()));
+        response.setToken(token);
 
-            response.setId(loginRequest.getId());
-            response.setUsername(loginRequest.getUsername());
-            response.setRoles(loginRequest.getRoles());
-
-            return response;
+        return response;
     }
-    
-    
-    
+
     public SignupResponse signUp(SignupRequest signupRequest) {
-        // Implement your signup logic here
-        // For example, save the user to the database
-        return ResponseEntity.ok("Signup Successful");
+        // check existing username
+        if (userRepository.findByusername(signupRequest.getUsername()) != null) {
+            throw new RuntimeException("Username already exists");
+        }
+
+        String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
+        User user = new User(signupRequest.getUsername(), encodedPassword, signupRequest.getEmail());
+
+        Set<Role> roles = new HashSet<>();
+        if (signupRequest.getRole() == null || signupRequest.getRole().isEmpty()) {
+            roles.add(new Role(RoleName.ROLE_USER));
+        } else {
+            for (String r : signupRequest.getRole()) {
+                if ("ROLE_ADMIN".equalsIgnoreCase(r) || "admin".equalsIgnoreCase(r)) {
+                    roles.add(new Role(RoleName.ROLE_ADMIN));
+                } else {
+                    roles.add(new Role(RoleName.ROLE_USER));
+                }
+            }
+        }
+
+        user.setRoles(roles);
+        User saved = userRepository.save(user);
+
+        SignupResponse response = new SignupResponse();
+        response.setUsername(saved.getUsername());
+        response.setEmail(saved.getEmail());
+        response.setRole(saved.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toSet()));
+        return response;
     }
 }

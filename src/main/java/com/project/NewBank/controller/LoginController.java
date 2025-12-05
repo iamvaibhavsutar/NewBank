@@ -21,13 +21,13 @@ public class LoginController {
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Validated LoginRequest loginRequest) {
-        return loginService.login(loginRequest);
+        return ResponseEntity.ok(loginService.login(loginRequest));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody @Validated SignupRequest signupRequest) {
        
-        return loginService.signUp(signupRequest);
+        return ResponseEntity.ok(loginService.signUp(signupRequest));
     }
     
 }
