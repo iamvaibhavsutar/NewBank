@@ -67,7 +67,8 @@ public class LoginService {
         }
 
         String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
-        User user = new User(signupRequest.getUsername(), encodedPassword, signupRequest.getEmail());
+        User user = new User(signupRequest.getUsername(), encodedPassword,
+                        signupRequest.getFullname(), signupRequest.getEmail());
 
         Set<Role> roles = new HashSet<>();
         if (signupRequest.getRole() == null || signupRequest.getRole().isEmpty()) {
@@ -88,6 +89,7 @@ public class LoginService {
         SignupResponse response = new SignupResponse();
         response.setUsername(saved.getUsername());
         response.setEmail(saved.getEmail());
+        response.setFullname(saved.getFullname());
         response.setRole(saved.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toSet()));
         return response;
     }

@@ -32,6 +32,11 @@ public class User {
     @Size(max = 20)
     @Column(name = "username")
     private String username;
+
+    @NotBlank
+    @Size(max = 20)
+    @Column(name = "fullname")
+    private String fullname;
     
     @NotBlank
     @Size(max = 20)
@@ -44,8 +49,9 @@ public class User {
     public User() {
     }
 
-    public User(String username, String password, String email) {
+    public User(String username, String password, String fullname, String email) {
         this.username = username;
+        this.fullname = fullname;
         this.password = password;
         this.email = email;
     }
@@ -67,6 +73,10 @@ public class User {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getFullname() {
+        return fullname;
     }
 
     public String getEmail() {

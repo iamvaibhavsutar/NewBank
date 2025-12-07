@@ -14,12 +14,16 @@ public class UserDetailsImpl implements org.springframework.security.core.userde
     private static final long serialVersionUID = 1L;
     private final String username;
     private final String password;
+    private final String email;
+    private final String fullname;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(String username, String email, String password,
+    public UserDetailsImpl(String username, String email, String password, String fullname,
             Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
         this.password = password;
+        this.email = email;
+        this.fullname = fullname;
         this.authorities = authorities;
     }
 
@@ -30,8 +34,9 @@ public class UserDetailsImpl implements org.springframework.security.core.userde
 
         return new UserDetailsImpl(
                 user.getUsername(),
-                user.getEmail(),
                 user.getPassword(),
+                user.getEmail(),
+                user.getFullname(),
                 authorities
         );
     }
@@ -49,6 +54,14 @@ public class UserDetailsImpl implements org.springframework.security.core.userde
     @Override
     public String getUsername() {
         return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+    
+    public String getFullname() {
+        return fullname;
     }
 
     @Override

@@ -27,7 +27,7 @@ public class LoginController {
     @PostMapping("/signup")
     public ResponseEntity<?> signUp(@RequestBody @Validated SignupRequest signupRequest) {
        
-        return ResponseEntity.ok(loginService.signUp(signupRequest));
+        return ResponseEntity.created(null).body(loginService.signUp(signupRequest));
     }
     
 }
