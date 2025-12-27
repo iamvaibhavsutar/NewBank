@@ -17,8 +17,8 @@ import com.project.NewBank.Security.Response.SignupResponse;
 import com.project.NewBank.Security.request.LoginRequest;
 import com.project.NewBank.Security.request.SignupRequest;
 import com.project.NewBank.Service.Security.JwtService;
+import com.project.NewBank.model.Enum.RoleName;
 import com.project.NewBank.model.Role;
-import com.project.NewBank.model.RoleName;
 import com.project.NewBank.model.User;
 import com.project.NewBank.repository.UserRepository;
 
@@ -90,7 +90,8 @@ public class LoginService {
         response.setUsername(saved.getUsername());
         response.setEmail(saved.getEmail());
         response.setFullname(saved.getFullname());
-        response.setRole(saved.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toSet()));
+        response.setRole(saved.getRoles().stream().
+                        map(r -> r.getName().name()).collect(Collectors.toSet()));
         return response;
     }
 }
