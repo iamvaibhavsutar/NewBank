@@ -24,7 +24,7 @@ public class JwtService {
     @Autowired
     private UserDetailsService detailsService;
 
-    private final String SECRET_KEY = "your_secret_key_here";
+    private final String SECRET_KEY = "This_is_springboot_project_secret_key";
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
 
     private Key secretKey() {
@@ -39,10 +39,10 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(secretKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        .setSigningKey(secretKey())
+        .build()
+        .parseClaimsJws(token)
+        .getBody();
     }
 
     private String extractUsername(String token) {

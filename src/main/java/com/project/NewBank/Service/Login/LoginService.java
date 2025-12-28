@@ -62,7 +62,7 @@ public class LoginService {
 
     public SignupResponse signUp(SignupRequest signupRequest) {
         // check existing username
-        if (userRepository.findByusername(signupRequest.getUsername()) != null) {
+        if (userRepository.findByUsername(signupRequest.getUsername()) != null) {
             throw new RuntimeException("Username already exists");
         }
 

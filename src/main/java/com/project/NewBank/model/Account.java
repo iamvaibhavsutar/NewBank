@@ -14,7 +14,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
 @Entity
@@ -24,16 +27,21 @@ public class Account {
     @Column(name = "account_id")
     private Long id;
 
+    
     @Column(name = "account_number", unique = true, nullable = false)
+    @Setter
     private String accountNumber;
     
     @Column(name = "balance", nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
+    
     @Column(name = "account_type", nullable = false)
     private String accountType;
     
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @Getter
+    @Setter
     private User user;
 
     @Column(name = "currency", nullable = false)
@@ -47,5 +55,14 @@ public class Account {
     @Enumerated(jakarta.persistence.EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AccountStatus status= AccountStatus.ACTIVE;
+
+    @Builder
+    public Account(String accountNumber, String accountType, User user, String currency) {
+        this.accountNumber = accountNumber;
+        this.accountType = accountType;
+        this.user = user;
+        this.currency = currency;
+    }
+    
     
 }

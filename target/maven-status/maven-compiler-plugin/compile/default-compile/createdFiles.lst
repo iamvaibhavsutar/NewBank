@@ -1,5 +1,8 @@
+com\project\NewBank\Security\request\AccountsManipulation\AccountCreationRequest.class
 com\project\NewBank\Security\request\LoginRequest.class
-com\project\NewBank\config\SecurityConfig.class
-com\project\NewBank\Security\request\SignupRequest.class
+com\project\NewBank\Security\Response\TransactionResponse.class
 com\project\NewBank\NewBankApplication.class
-com\project\NewBank\filter\JwtFilter.class
+com\project\NewBank\Security\Response\LoginResponse.class
+com\project\NewBank\Security\Response\SignupResponse.class
+com\project\NewBank\Security\request\SignupRequest.class
+com\project\NewBank\Security\Response\AccountResponse.class
