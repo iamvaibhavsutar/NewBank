@@ -14,6 +14,7 @@ import com.project.NewBank.Security.Response.AccountResponse;
 import com.project.NewBank.Security.request.AccountsManipulation.AccountCreationRequest;
 import com.project.NewBank.Security.request.AccountsManipulation.WithdrawRequest;
 import com.project.NewBank.model.Account;
+import com.project.NewBank.model.Transaction;
 import com.project.NewBank.model.User;
 import com.project.NewBank.repository.AccountRepository;
 import com.project.NewBank.repository.UserRepository;
@@ -102,11 +103,38 @@ public class AccountService {
     }
 
     @Transactional
-    public void withdraw(WithdrawRequest request) {
+    public void withdraw(WithdrawRequest request,String username) {
         // to withdraw amount from account
-        Account account = findAndValidateAccount(request.getAccountNumber(), getUsername());
+        Account account = findAndValidateAccount(request.getAccountNumber(), username);
 
         validateWithdrawal(request.getAccountNumber(), request.getAmount(), account.getBalance());
+
+        Transaction transaction = createTransaction(
+            account,                                // Source account
+            null,                                   // No destination for withdrawals
+            request.getAmount(),
+            Transaction.TransactionType.WITHDRAWAL
+        );
+    }
+        private Transaction createTransaction(
+            Account fromAccount,
+            Account toAccount,
+            BigDecimal amount,
+            Transaction.TransactionType type) {
+        
+        return Transaction.builder()
+                .transactionId(generateTransactionId())
+                .fromAccount(fromAccount)
+                .toAccount(toAccount)
+                .amount(amount)
+                .type(type)
+                .status(Transaction.TransactionStatus.PENDING)
+                .description(description)
+                .referenceNumber(UUID.randomUUID().toString())
+                .build();
+    }
+    private String generateTransactionId() {
+        return "TXN" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     private void validateWithdrawal(String accountNumber, BigDecimal amount, BigDecimal balance) {
