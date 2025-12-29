@@ -33,7 +33,7 @@ public class Account {
     private String accountNumber;
     
     @Column(name = "balance", nullable = false)
-    private BigDecimal balance = BigDecimal.ZERO;
+    private BigDecimal balance;
     
     @Column(name = "account_type", nullable = false)
     private String accountType;
