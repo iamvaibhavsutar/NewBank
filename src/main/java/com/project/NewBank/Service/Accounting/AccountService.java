@@ -4,13 +4,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import javax.security.auth.login.AccountNotFoundException;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.project.NewBank.Security.Response.AccountResponse;
+import com.project.NewBank.Security.Response.TransactionResponse;
 import com.project.NewBank.Security.request.AccountsManipulation.AccountCreationRequest;
 import com.project.NewBank.Security.request.AccountsManipulation.WithdrawRequest;
 import com.project.NewBank.model.Account;
@@ -18,6 +18,7 @@ import com.project.NewBank.model.Transaction;
 import com.project.NewBank.model.User;
 import com.project.NewBank.repository.AccountRepository;
 import com.project.NewBank.repository.UserRepository;
+import com.project.NewBank.repository.TransactionRepository;
 import com.project.NewBank.model.Enum.AccountStatus;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class AccountService {
 
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
 
     public AccountResponse createAccount(AccountCreationRequest request, String username) {
         // to create new account for user
@@ -56,7 +58,7 @@ public class AccountService {
     private String generateAccountNumber() {
         String accountNumber;
         do {
-            accountNumber = "ACC" + System.currentTimeMillis() + UUID.randomUUID().toString();;
+            accountNumber = "ACC" + System.currentTimeMillis() + UUID.randomUUID().toString();
         } while (accountRepository.existsByAccountNumber(accountNumber));
         
         return accountNumber;
@@ -87,8 +89,6 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-
-
     public AccountResponse getAccount(String accountNumber, String username) {
         // to get account by account number
         User user = userRepository.findByUsername(username);
@@ -102,44 +102,66 @@ public class AccountService {
         return mapToAccountResponse(account);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     @Transactional
-    public void withdraw(WithdrawRequest request,String username) {
+    public TransactionResponse withdraw(WithdrawRequest request,String username) {
         // to withdraw amount from account
         Account account = findAndValidateAccount(request.getAccountNumber(), username);
-
-        validateWithdrawal(request.getAccountNumber(), request.getAmount(), account.getBalance());
+        
+        validateWithdrawal(request.getAmount(), account.getBalance());
+        
+        BigDecimal balanceBefore = account.getBalance();
 
         Transaction transaction = createTransaction(
-            account,                                // Source account
-            null,                                   // No destination for withdrawals
+            account,                                
+            null,                                   
             request.getAmount(),
             Transaction.TransactionType.WITHDRAWAL
         );
+        transaction.setBalanceBefore(balanceBefore);
+        transaction.setStatus(Transaction.TransactionStatus.PROCESSING);
+
+        try{
+            account.setBalance(account.getBalance().subtract(request.getAmount()));
+            
+            accountRepository.save(account);
+            
+            // 7. Complete transaction
+            transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+            transaction.setBalanceAfter(account.getBalance());
+            Transaction savedTransaction = transactionRepository.save(transaction);
+
+            return mapToTransactionResponse(savedTransaction);
+        }catch(Exception e){
+            transaction.setStatus(Transaction.TransactionStatus.FAILED);
+            transaction.setFailureReason(e.getMessage());
+            transactionRepository.save(transaction); 
+            
+            throw new RuntimeException("Withdrawal failed: " + e.getMessage(), e);
+        }
+
     }
-        private Transaction createTransaction(
-            Account fromAccount,
-            Account toAccount,
-            BigDecimal amount,
-            Transaction.TransactionType type) {
-        
-        return Transaction.builder()
-                .transactionId(generateTransactionId())
-                .fromAccount(fromAccount)
-                .toAccount(toAccount)
-                .amount(amount)
-                .type(type)
-                .status(Transaction.TransactionStatus.PENDING)
-                .description(description)
-                .referenceNumber(UUID.randomUUID().toString())
-                .build();
-    }
+    
+    
     private String generateTransactionId() {
         return "TXN" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    private void validateWithdrawal(String accountNumber, BigDecimal amount, BigDecimal balance) {
+    private void validateWithdrawal( BigDecimal amount, BigDecimal balance) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Withdrawal amount must be greater thsn zero");
+            throw new IllegalArgumentException("Withdrawal amount must be greater than zero");
         }
         if (balance.compareTo(amount) < 0) {
             throw new IllegalArgumentException(
@@ -148,13 +170,55 @@ public class AccountService {
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     public void deposit(Long accountId, Double amount) {
         // to deposit amount to account
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
     public void transfer(Long fromAccountId, Long toAccountId, Double amount) {
         // to transfer amount between accounts
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     private Account findAndValidateAccount(String accountNumber, String username) {
         Account account = accountRepository.findByAccountNumber(accountNumber);
@@ -168,5 +232,41 @@ public class AccountService {
         }
         
         return account;
+    }
+
+    private Transaction createTransaction(
+            Account fromAccount,
+            Account toAccount,
+            BigDecimal amount,
+            Transaction.TransactionType type) {
+        
+        return Transaction.builder()
+                .transactionId(generateTransactionId())
+                .fromAccount(fromAccount)
+                .toAccount(toAccount)
+                .amount(amount)
+                .type(type)
+                .status(Transaction.TransactionStatus.PENDING)
+                .referenceNumber(UUID.randomUUID().toString())
+                .build();
+    }
+
+    private TransactionResponse mapToTransactionResponse(Transaction transaction) {
+        return TransactionResponse.builder()
+                .id(transaction.getId())
+                .transactionId(transaction.getTransactionId())
+                .transactionType(transaction.getType())
+                .transactionAmount(transaction.getAmount())
+                .status(transaction.getStatus())
+                .description(transaction.getDescription())
+                .fromAccountNumber(transaction.getFromAccount() != null ? 
+                        transaction.getFromAccount() : null)
+                .toAccountNumber(transaction.getToAccount() != null ? 
+                        transaction.getToAccount() : null)
+                        .balanceBefore(transaction.getBalanceBefore())
+                .balanceAfter(transaction.getBalanceAfter())
+                .transactionDate(transaction.getTransactionDate())
+                .referenceNumber(transaction.getReferenceNumber())
+                .build();
     }
 }

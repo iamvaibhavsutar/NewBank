@@ -32,6 +32,7 @@ public class AccountController {
     }
     @PostMapping("/accounts/withdraw")
     public ResponseEntity<TransactionResponse> withdraw(){
+        
         return ResponseEntity.ok().build();
     }
     @PostMapping("/accounts/deposit")
