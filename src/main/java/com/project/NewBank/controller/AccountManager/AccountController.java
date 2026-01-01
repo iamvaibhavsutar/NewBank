@@ -19,13 +19,13 @@ public class AccountController {
     @Autowired
     AccountService accountService;
 
-    @PostMapping("/accounts")
+    @PostMapping("/list")
     public ResponseEntity<List<AccountResponse>> getAllAccounts() {
         
         
         return ResponseEntity.ok().build();
     }
-    @PostMapping("/accounts")
+    @PostMapping("/create")
     public ResponseEntity<AccountResponse> createAccount() {
         // Implementation to create a new account
         return ResponseEntity.ok().build();

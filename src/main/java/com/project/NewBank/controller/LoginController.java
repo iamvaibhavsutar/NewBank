@@ -13,7 +13,7 @@ import com.project.NewBank.Security.request.SignupRequest;
 import com.project.NewBank.Service.Login.LoginService;
 
 @RestController
-@RequestMapping("/home")
+@RequestMapping("/auth")
 public class LoginController {
     
     @Autowired
