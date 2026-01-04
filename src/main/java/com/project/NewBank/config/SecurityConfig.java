@@ -25,7 +25,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.project.NewBank.filter.JwtFilter;
 
-@SuppressWarnings("deprecation")
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -35,12 +34,12 @@ public class SecurityConfig {
     private JwtFilter filter;
     
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/home/**", "/auth/**").permitAll()
+                .requestMatchers("/", "/home", "/home/**","/api/auth", "/auth/**", "/api/auth/**").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

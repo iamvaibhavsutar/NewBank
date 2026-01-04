@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,11 +21,12 @@ public class AccountController {
     @Autowired
     AccountService accountService;
 
-    @PostMapping("/list")
-    public ResponseEntity<List<AccountResponse>> getAllAccounts() {
+    @GetMapping
+    public ResponseEntity<List<AccountResponse>> getAllAccounts(Authentication authentication) {
+        String username = authentication.getName();
+        List<AccountResponse> accounts = accountService.getUserAccounts(username);
         
-        
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(accounts);
     }
     @PostMapping("/create")
     public ResponseEntity<AccountResponse> createAccount() {

@@ -13,14 +13,15 @@ import com.project.NewBank.Security.request.SignupRequest;
 import com.project.NewBank.Service.Login.LoginService;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class LoginController {
     
     @Autowired
     LoginService loginService;
     
-    @PostMapping("/login")
+    @PostMapping({"/login", "/api/auth/login"})
     public ResponseEntity<?> login(@RequestBody @Validated LoginRequest loginRequest) {
+        System.out.println("LOGIN CONTROLLER HIT");
         return ResponseEntity.ok(loginService.login(loginRequest));
     }
 

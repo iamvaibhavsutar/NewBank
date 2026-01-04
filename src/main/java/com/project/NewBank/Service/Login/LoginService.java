@@ -38,26 +38,29 @@ public class LoginService {
     }
 
     public LoginResponse login(LoginRequest loginRequest) {
+        System.out.println("[DEBUG] LoginService: Attempting login for username: " + loginRequest.getUsername());
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword());
 
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
-
-        Object principal = authentication.getPrincipal();
-        if (!(principal instanceof UserDetails)) {
-            throw new RuntimeException("Authentication did not return a valid UserDetails principal");
+        try {
+            Authentication authentication = authenticationManager.authenticate(authenticationToken);
+            Object principal = authentication.getPrincipal();
+            if (!(principal instanceof UserDetails)) {
+                System.out.println("[DEBUG] LoginService: Authentication did not return a valid UserDetails principal");
+                throw new RuntimeException("Authentication did not return a valid UserDetails principal");
+            }
+            UserDetails userDetails = (UserDetails) principal;
+            System.out.println("[DEBUG] LoginService: Authenticated user: " + userDetails.getUsername());
+            String token = jwtService.generateToken(new HashMap<>(), userDetails);
+            LoginResponse response = new LoginResponse();
+            response.setUsername(userDetails.getUsername());
+            response.setRoles(userDetails.getAuthorities().stream().map(a -> a.getAuthority()).collect(Collectors.toList()));
+            response.setToken(token);
+            return response;
+        } catch (Exception e) {
+            System.out.println("[DEBUG] LoginService: Authentication failed for username: " + loginRequest.getUsername() + ", reason: " + e.getMessage());
+            throw e;
         }
-
-        UserDetails userDetails = (UserDetails) principal;
-
-        String token = jwtService.generateToken(new HashMap<>(), userDetails);
-
-        LoginResponse response = new LoginResponse();
-        response.setUsername(userDetails.getUsername());
-        response.setRoles(userDetails.getAuthorities().stream().map(a -> a.getAuthority()).collect(Collectors.toList()));
-        response.setToken(token);
-
-        return response;
     }
 
     public SignupResponse signUp(SignupRequest signupRequest) {

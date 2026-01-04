@@ -18,6 +18,7 @@ com\project\NewBank\model\Transaction.class
 com\project\NewBank\model\Enum\AccountStatus.class
 com\project\NewBank\Security\Response\LoginResponse.class
 com\project\NewBank\Service\Security\JwtService.class
+com\project\NewBank\config\DataInitializer.class
 com\project\NewBank\repository\UserRepository.class
 com\project\NewBank\config\SecurityConfig.class
 com\project\NewBank\repository\AccountRepository.class

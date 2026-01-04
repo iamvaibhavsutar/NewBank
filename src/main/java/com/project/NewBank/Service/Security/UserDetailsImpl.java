@@ -34,8 +34,8 @@ public class UserDetailsImpl implements org.springframework.security.core.userde
 
         return new UserDetailsImpl(
                 user.getUsername(),
-                user.getPassword(),
                 user.getEmail(),
+                user.getPassword(),
                 user.getFullname(),
                 authorities
         );

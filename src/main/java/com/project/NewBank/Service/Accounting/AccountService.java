@@ -3,7 +3,7 @@ package com.project.NewBank.Service.Accounting;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -14,12 +14,12 @@ import com.project.NewBank.Security.Response.TransactionResponse;
 import com.project.NewBank.Security.request.AccountsManipulation.AccountCreationRequest;
 import com.project.NewBank.Security.request.AccountsManipulation.WithdrawRequest;
 import com.project.NewBank.model.Account;
+import com.project.NewBank.model.Enum.AccountStatus;
 import com.project.NewBank.model.Transaction;
 import com.project.NewBank.model.User;
 import com.project.NewBank.repository.AccountRepository;
-import com.project.NewBank.repository.UserRepository;
 import com.project.NewBank.repository.TransactionRepository;
-import com.project.NewBank.model.Enum.AccountStatus;
+import com.project.NewBank.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +32,19 @@ public class AccountService {
     private final UserRepository userRepository;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+
+    @Transactional(readOnly = true)
+    public List<AccountResponse> getUserAccounts(String username) {
+        log.info("Fetching all accounts for user: {}", username);
+    
+    // Find all accounts for this user
+        List<Account> accounts = accountRepository.findByUserUsername(username);
+    
+    // Convert each entity to DTO
+        return accounts.stream()
+            .map(this::mapToAccountResponse)  // Method reference
+            .collect(Collectors.toList());
+    }
 
     public AccountResponse createAccount(AccountCreationRequest request, String username) {
         // to create new account for user

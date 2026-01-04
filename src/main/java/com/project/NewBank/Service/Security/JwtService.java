@@ -1,7 +1,6 @@
 package com.project.NewBank.Service.Security;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,8 +27,8 @@ public class JwtService {
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
 
     private Key secretKey() {
-        byte[] key = Base64.getDecoder().decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(key);
+        // Use the plain string as the key (UTF-8 bytes)
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
     }
 
     private <T> T extractClaims(String token, Function<Claims, T> claimsResolver) {
