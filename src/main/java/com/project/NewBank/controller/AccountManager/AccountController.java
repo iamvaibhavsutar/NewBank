@@ -46,7 +46,7 @@ public class AccountController {
     public ResponseEntity<TransactionResponse> transfer(){
         return ResponseEntity.ok().build();
     }
-    @PostMapping("/accounts/transactions")
+    @PostMapping("/accounts/transactions/{accountNumber}")
     public ResponseEntity<TransactionResponse> getTransactionByAccount(){
         return ResponseEntity.ok().build();
     }

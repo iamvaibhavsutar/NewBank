@@ -58,7 +58,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-		// TODO Auto-generated method stub
 		return request.getRequestURI().startsWith("/auth/");
 	}
 
