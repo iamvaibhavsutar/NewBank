@@ -2,21 +2,26 @@ package com.project.NewBank.Service.Login;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import com.project.NewBank.Security.Response.LoginResponse;
 import com.project.NewBank.Security.Response.SignupResponse;
 import com.project.NewBank.Security.request.LoginRequest;
 import com.project.NewBank.Security.request.SignupRequest;
 import com.project.NewBank.Service.Security.JwtService;
+import com.project.NewBank.Service.Security.UserDetailsServiceImpl;
 import com.project.NewBank.model.Enum.RoleName;
 import com.project.NewBank.model.Role;
 import com.project.NewBank.model.User;
@@ -29,12 +34,14 @@ public class LoginService {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserDetailsServiceImpl userdetailsService;
 
-    public LoginService(AuthenticationManager authenticationManager, JwtService jwtService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public LoginService(AuthenticationManager authenticationManager, JwtService jwtService, UserRepository userRepository, PasswordEncoder passwordEncoder, com.project.NewBank.Service.Security.UserDetailsServiceImpl userdetailsService) {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userdetailsService = userdetailsService;
     }
 
     public LoginResponse login(LoginRequest loginRequest) {
@@ -63,6 +70,26 @@ public class LoginService {
             System.out.println("[DEBUG] LoginService: Authentication failed for username: " + loginRequest.getUsername() + ", reason: " + e.getMessage());
             throw e;
         }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+        String refreshToken = body.get("refreshToken");
+
+        // Validate refresh token
+        if (!jwtService.validateToken(refreshToken, jwtService.extractUsernameFromToken(refreshToken))) {
+            return ResponseEntity.status(401).body("Invalid refresh token");
+        }
+
+        // Extract username from refresh token
+        String username = jwtService.extractUsernameFromToken(refreshToken);
+
+        // Generate new access token
+        String newAccessToken = jwtService.generateToken(new HashMap<>(), userdetailsService.loadUserByUsername(username));
+
+        return ResponseEntity.ok(Map.of(
+            "accessToken", newAccessToken
+        ));
     }
 
     public SignupResponse signUp(SignupRequest signupRequest) {
