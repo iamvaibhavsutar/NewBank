@@ -50,13 +50,25 @@ public class DataInitializer {
                     account.setBalance(BigDecimal.valueOf(1000));
                     Account savedAccount = accountRepository.save(account);
 
+                    Account checkingAccount = Account.builder()
+                        .accountType("CHECKING")
+                        .accountNumber("ACC270470812345612B8E2D5")
+                        .user(saved)
+                        .currency("USD")
+                        .build();
+                    checkingAccount.setBalance(BigDecimal.valueOf(2500));
+                    Account savedChecking = accountRepository.save(checkingAccount);
+
                     System.out.println("✅ Test user created: username=testuser, password=password123");
                     System.out.println("   User ID: " + saved.getId() + ", Roles: " + saved.getRoles().size());
                     System.out.println("   Password (BCrypt): " + encodedPassword);
                     System.out.println("-----------------------------------------------------");
 
                     System.out.println("✅ Test user accounts created: ACC170470812345612A9F3C4 with balance $1000");
+                    System.out.println("✅ Test user accounts created: ACC270470812345612B8E2D5 with balance $2500");
+                    
                     System.out.println("   Account ID: " + savedAccount.getId() + ", Type: " + savedAccount.getAccountType());
+                    System.out.println("   Account ID: " + savedChecking.getId() + ", Type: " + savedChecking.getAccountType());
                     System.out.println("-----------------------------------------------------");
                 } catch (Exception e) {
                     System.err.println("Error creating test user: " + e.getMessage());

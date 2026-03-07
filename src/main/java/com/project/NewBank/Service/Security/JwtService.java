@@ -23,7 +23,7 @@ public class JwtService {
     @Autowired
     private UserDetailsService detailsService;
 
-    private final String SECRET_KEY = "This_is_springboot_project_secret_key";
+    private final String SECRET_KEY = "This_is_springboot_project_secret_key_256bit_safe!!";
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
 
     private Key secretKey() {

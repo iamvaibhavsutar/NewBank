@@ -47,8 +47,6 @@ public class SecurityConfig {
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider())
-            .formLogin(form -> form.loginPage("/login").permitAll())
-            .logout(logout -> logout.permitAll())
             .addFilterBefore(filter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

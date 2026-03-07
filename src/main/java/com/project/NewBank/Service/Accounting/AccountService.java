@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.project.NewBank.Security.Response.AccountResponse;
 import com.project.NewBank.Security.Response.TransactionResponse;
 import com.project.NewBank.Security.request.AccountsManipulation.AccountCreationRequest;
+import com.project.NewBank.Security.request.AccountsManipulation.TransferRequest;
 import com.project.NewBank.Security.request.AccountsManipulation.WithdrawRequest;
 import com.project.NewBank.model.Account;
 import com.project.NewBank.model.Enum.AccountStatus;
@@ -142,7 +143,7 @@ public class AccountService {
             null,                                   
             request.getAmount(),
             Transaction.TransactionType.WITHDRAWAL
-        );
+        );   ///Initialize transaction as PENDING (transaction status will be updated later)
         transaction.setBalanceBefore(balanceBefore);
         transaction.setStatus(Transaction.TransactionStatus.PROCESSING);
 
@@ -215,9 +216,50 @@ public class AccountService {
 
 
 
-    public void transfer(Long fromAccountId, Long toAccountId, Double amount) {
-        // to transfer amount between accounts
+@Transactional
+public TransactionResponse transfer(TransferRequest request, String username) {
+
+    Account fromAccount = findAndValidateAccount(request.getFromAccountNumber(), username);
+    Account toAccount = accountRepository.findByAccountNumber(request.getToAccountNumber());
+
+    if (toAccount == null) {
+        throw new RuntimeException("Destination account not found");
     }
+    if (fromAccount.getAccountNumber().equals(toAccount.getAccountNumber())) {
+        throw new IllegalArgumentException("Cannot transfer to the same account");
+    }
+
+    validateWithdrawal(request.getAmount(), fromAccount.getBalance());
+
+    BigDecimal balanceBefore = fromAccount.getBalance();
+
+    Transaction transaction = createTransaction(
+        fromAccount, toAccount, request.getAmount(), Transaction.TransactionType.TRANSFER
+    );
+    transaction.setBalanceBefore(balanceBefore);
+    transaction.setStatus(Transaction.TransactionStatus.PROCESSING);
+
+    try {
+        // Debit from source
+        fromAccount.setBalance(fromAccount.getBalance().subtract(request.getAmount()));
+        // Credit to destination
+        toAccount.setBalance(toAccount.getBalance().add(request.getAmount()));
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
+
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transaction.setBalanceAfter(fromAccount.getBalance());
+        Transaction saved = transactionRepository.save(transaction);
+
+        return mapToTransactionResponse(saved);
+    } catch (Exception e) {
+        transaction.setStatus(Transaction.TransactionStatus.FAILED);
+        transaction.setFailureReason(e.getMessage());
+        transactionRepository.save(transaction);
+        throw new RuntimeException("Transfer failed: " + e.getMessage(), e);
+    }
+}
 
 
 

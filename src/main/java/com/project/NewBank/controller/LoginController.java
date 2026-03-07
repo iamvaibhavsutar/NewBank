@@ -19,7 +19,7 @@ public class LoginController {
     @Autowired
     LoginService loginService;
     
-    @PostMapping({"/login", "/api/auth/login"})
+    @PostMapping({"/login"})
     public ResponseEntity<?> login(@RequestBody @Validated LoginRequest loginRequest) {
         System.out.println("LOGIN CONTROLLER HIT");
         return ResponseEntity.ok(loginService.login(loginRequest));
