@@ -8,6 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -23,12 +24,20 @@ public class JwtService {
     @Autowired
     private UserDetailsService detailsService;
 
-    private final String SECRET_KEY = "This_is_springboot_project_secret_key_256bit_safe!!";
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 10; // 10 hours
+    @Value("${jwt.secret-key}")
+    private String SECRET_KEY;
+
+    @Value("${jwt.refresh-key}")
+    private String REFRESH_KEY;
+
+
 
     private Key secretKey() {
-        // Use the plain string as the key (UTF-8 bytes)
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
+
+    private Key refreshKey() {
+        return Keys.hmacShaKeyFor(REFRESH_KEY.getBytes());
     }
 
     private <T> T extractClaims(String token, Function<Claims, T> claimsResolver) {
@@ -65,8 +74,18 @@ public class JwtService {
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .setExpiration(new Date(System.currentTimeMillis() + 15 * 60 * 1000))
                 .signWith(secretKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String createRefreshToken(Map<String, Object> claims, UserDetails userDetails) {
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000))
+                .signWith(refreshKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -83,4 +102,7 @@ public class JwtService {
         return user.getUsername().equals(extractUsername(token)) && !isTokenExpired(token);
     }
 
+    public boolean validateToken(String token, String user) {
+        return user.equals(extractUsername(token)) && !isTokenExpired(token);
+    }
 }

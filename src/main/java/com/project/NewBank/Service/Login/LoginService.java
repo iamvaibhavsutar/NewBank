@@ -52,10 +52,12 @@ public class LoginService {
             UserDetails userDetails = (UserDetails) principal;
             System.out.println("[DEBUG] LoginService: Authenticated user: " + userDetails.getUsername());
             String token = jwtService.generateToken(new HashMap<>(), userDetails);
+            String refreshToken = jwtService.createRefreshToken(new HashMap<>(), userDetails);
             LoginResponse response = new LoginResponse();
             response.setUsername(userDetails.getUsername());
             response.setRoles(userDetails.getAuthorities().stream().map(a -> a.getAuthority()).collect(Collectors.toList()));
             response.setToken(token);
+            response.setRefreshToken(refreshToken);
             return response;
         } catch (RuntimeException e) {
             System.out.println("[DEBUG] LoginService: Authentication failed for username: " + loginRequest.getUsername() + ", reason: " + e.getMessage());
