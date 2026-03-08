@@ -102,7 +102,21 @@ public class JwtService {
         return user.getUsername().equals(extractUsername(token)) && !isTokenExpired(token);
     }
 
-    public boolean validateToken(String token, String user) {
-        return user.equals(extractUsername(token)) && !isTokenExpired(token);
+    public boolean validateRefreshToken(String token, String username) {
+        try {
+        Claims claims = Jwts.parserBuilder()
+            .setSigningKey(refreshKey())
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+
+        String extractedUsername = claims.getSubject();
+        Date expiration = claims.getExpiration();
+
+        return extractedUsername.equals(username) && 
+               !expiration.before(new Date());
+    } catch (Exception e) {
+        return false;
+    }
     }
 }
