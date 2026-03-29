@@ -1,10 +1,9 @@
 package com.project.NewBank.Security.Response;
-import com.project.NewBank.model.Transaction.TransactionType;
-import com.project.NewBank.model.Transaction.TransactionStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.project.NewBank.model.Account;
+import com.project.NewBank.model.Transaction.TransactionStatus;
+import com.project.NewBank.model.Transaction.TransactionType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,8 +23,8 @@ public class TransactionResponse {
     private TransactionType transactionType;
     private BigDecimal balance;
     private String description;
-    private Account fromAccountNumber;
-    private Account toAccountNumber;
+    private String fromAccountNumber;
+    private String toAccountNumber;
     private BigDecimal balanceBefore;
     private BigDecimal balanceAfter;
     private String referenceNumber;

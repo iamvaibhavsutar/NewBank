@@ -98,6 +98,15 @@ public class JwtService {
         return extractUsername(token);
     }
 
+    public String extractUsernameFromRefreshToken(String token) {
+        return Jwts.parserBuilder()
+            .setSigningKey(refreshKey())
+            .build()
+            .parseClaimsJws(token)
+            .getBody()
+            .getSubject();
+    }
+
     public boolean validateToken(String token, UserDetails user) {
         return user.getUsername().equals(extractUsername(token)) && !isTokenExpired(token);
     }

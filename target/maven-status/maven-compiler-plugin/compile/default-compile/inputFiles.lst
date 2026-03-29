@@ -15,6 +15,7 @@ D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\repo
 D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\repository\TransactionRepository.java
 D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\repository\UserRepository.java
 D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\Security\request\AccountsManipulation\AccountCreationRequest.java
+D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\Security\request\AccountsManipulation\DepositRequest.java
 D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\Security\request\AccountsManipulation\TransferRequest.java
 D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\Security\request\AccountsManipulation\WithdrawRequest.java
 D:\College documents\Java\NewBank\NewBank\src\main\java\com\project\NewBank\Security\request\LoginRequest.java

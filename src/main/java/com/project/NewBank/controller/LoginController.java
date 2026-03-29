@@ -53,7 +53,7 @@ public class LoginController {
         }
 
         try {
-            String username = jwtService.extractUsernameFromToken(refreshToken);
+            String username = jwtService.extractUsernameFromRefreshToken(refreshToken);
 
             if (!jwtService.validateRefreshToken(refreshToken, username)) {
                 return ResponseEntity.status(401).body("Invalid or expired refresh token");

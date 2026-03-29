@@ -1,6 +1,7 @@
 package com.project.NewBank.Service.Accounting;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.project.NewBank.Security.Response.AccountResponse;
 import com.project.NewBank.Security.Response.TransactionResponse;
 import com.project.NewBank.Security.request.AccountsManipulation.AccountCreationRequest;
+import com.project.NewBank.Security.request.AccountsManipulation.DepositRequest;
 import com.project.NewBank.Security.request.AccountsManipulation.TransferRequest;
 import com.project.NewBank.Security.request.AccountsManipulation.WithdrawRequest;
 import com.project.NewBank.model.Account;
@@ -199,9 +201,44 @@ public class AccountService {
 
 
 
-    public void deposit(Long accountId, Double amount) {
-        // to deposit amount to account
+@Transactional
+public TransactionResponse deposit(DepositRequest request, String username) {
+    Account account = findAndValidateAccount(request.getAccountNumber(), username);
+
+    if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+        throw new IllegalArgumentException("Deposit amount must be greater than zero");
     }
+
+    BigDecimal balanceBefore = account.getBalance();
+
+    Transaction transaction = createTransaction(
+        null,                 //Always null for deposit maybe cash or something              
+        account,                            
+        request.getAmount(),
+        Transaction.TransactionType.DEPOSIT
+    );
+    transaction.setBalanceBefore(balanceBefore);
+    transaction.setStatus(Transaction.TransactionStatus.PROCESSING);
+
+    try {
+
+        account.setBalance(account.getBalance().add(request.getAmount()));
+        accountRepository.save(account);
+
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transaction.setBalanceAfter(account.getBalance());
+        transaction.setDescription(request.getDescription());
+        Transaction saved = transactionRepository.save(transaction);
+
+        return mapToTransactionResponse(saved);
+
+    } catch (Exception e) {
+        transaction.setStatus(Transaction.TransactionStatus.FAILED);
+        transaction.setFailureReason(e.getMessage());
+        transactionRepository.save(transaction);
+        throw new RuntimeException("Deposit failed: " + e.getMessage(), e);
+    }
+}
 
 
 
@@ -303,25 +340,41 @@ public TransactionResponse transfer(TransferRequest request, String username) {
                 .type(type)
                 .status(Transaction.TransactionStatus.PENDING)
                 .referenceNumber(UUID.randomUUID().toString())
+                .transactionDate(LocalDateTime.now())
                 .build();
     }
 
-    private TransactionResponse mapToTransactionResponse(Transaction transaction) {
-        return TransactionResponse.builder()
-                .id(transaction.getId())
-                .transactionId(transaction.getTransactionId())
-                .transactionType(transaction.getType())
-                .transactionAmount(transaction.getAmount())
-                .status(transaction.getStatus())
-                .description(transaction.getDescription())
-                .fromAccountNumber(transaction.getFromAccount() != null ? 
-                        transaction.getFromAccount() : null)
-                .toAccountNumber(transaction.getToAccount() != null ? 
-                        transaction.getToAccount() : null)
-                        .balanceBefore(transaction.getBalanceBefore())
-                .balanceAfter(transaction.getBalanceAfter())
-                .transactionDate(transaction.getTransactionDate())
-                .referenceNumber(transaction.getReferenceNumber())
-                .build();
+private TransactionResponse mapToTransactionResponse(Transaction transaction) {
+    return TransactionResponse.builder()
+            .id(transaction.getId())
+            .transactionId(transaction.getTransactionId())
+            .transactionType(transaction.getType())
+            .transactionAmount(transaction.getAmount())
+            .status(transaction.getStatus())
+            .description(transaction.getDescription())
+            .fromAccountNumber(transaction.getFromAccount() != null ?
+                    transaction.getFromAccount().getAccountNumber() : null)
+            .toAccountNumber(transaction.getToAccount() != null ?
+                    transaction.getToAccount().getAccountNumber() : null)  
+            .balanceBefore(transaction.getBalanceBefore())
+            .balanceAfter(transaction.getBalanceAfter())
+            .transactionDate(transaction.getTransactionDate())
+            .referenceNumber(transaction.getReferenceNumber())
+            .build();
+}
+
+
+
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> getTransactionsByAccount(String accountNumber, String username) {
+        Account account = findAndValidateAccount(accountNumber, username);
+
+        List<Transaction> transactions = transactionRepository
+            .findByFromAccountOrToAccountOrderByTransactionDateDesc(account, account);
+
+        return transactions.stream()
+            .map(this::mapToTransactionResponse)
+            .collect(Collectors.toList());
     }
+
 }
