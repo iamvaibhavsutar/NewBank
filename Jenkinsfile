@@ -63,7 +63,7 @@ pipeline {
                 sh """
                 docker stop newbank-container || true
                 docker rm newbank-container || true
-                docker run -d -p 9090:8080 --name newbank-container $DOCKER_IMAGE:$DOCKER_TAG
+                docker run -d -p 0:8080 --name newbank-container $DOCKER_IMAGE:$DOCKER_TAG
                 """
             }
         }
