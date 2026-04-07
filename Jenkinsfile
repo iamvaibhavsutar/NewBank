@@ -9,64 +9,41 @@ pipeline {
 
     stages {
 
-        stage('Clean Workspace') {
-            steps { cleanWs() }
-        }
-
-        stage('Checkout Backend Code') {
+        stage('Checkout') {
             steps {
                 git branch: 'main',
                 url: 'https://github.com/iamvaibhavsutar/NewBank.git'
             }
         }
 
-        stage('Build Backend (Dockerized Maven)') {
-            steps {
-                sh '''
-                mkdir -p .m2
-
-                docker run --rm \
-                -u $(id -u):$(id -g) \
-                -e HOME=/tmp \
-                -v $PWD:/app \
-                -v $PWD/.m2:/tmp/.m2 \
-                -w /app \
-                maven:3.9.9-eclipse-temurin-21 \
-                mvn clean package -DskipTests -Dmaven.repo.local=/tmp/.m2
-                '''
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                sh 'docker build --no-cache -t $IMAGE_FULL .'
+                sh 'docker build -t $IMAGE_FULL .'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push Image') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
                 )]) {
                     sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    echo $PASS | docker login -u $USER --password-stdin
                     docker push $IMAGE_FULL
                     '''
                 }
             }
         }
 
-        stage('Trigger UI Pipeline') {
+        stage('Trigger Deployment') {
             steps {
-                build job: 'Newbank_UI'
+                build job: 'Newbank_deployment',
+                      parameters: [
+                        string(name: 'IMAGE_TAG', value: "${IMAGE_TAG}")
+                      ]
             }
         }
-    }
-
-    post {
-        success { echo "✅ Backend Build Success" }
-        failure { echo "❌ Backend Failed" }
     }
 }
