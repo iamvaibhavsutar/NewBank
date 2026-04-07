@@ -25,12 +25,16 @@ pipeline {
         stage('Build Backend (Dockerized Maven)') {
             steps {
                 sh '''
+                mkdir -p .m2
+
                 docker run --rm \
                 -u $(id -u):$(id -g) \
+                -e HOME=/tmp \
                 -v $PWD:/app \
+                -v $PWD/.m2:/tmp/.m2 \
                 -w /app \
                 maven:3.9.9-eclipse-temurin-21 \
-                mvn clean package -DskipTests
+                mvn clean package -DskipTests -Dmaven.repo.local=/tmp/.m2
                 '''
             }
         }
@@ -59,7 +63,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',   // ✅ FIXED HERE
+                    credentialsId: 'dockerhub-cred',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
