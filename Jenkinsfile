@@ -1,20 +1,29 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'IMAGE_NAME', defaultValue: 'vaibhav411007/newbank-app', description: 'Docker Image Name')
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker Image Tag')
+        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git Branch')
+    }
+
     environment {
-        DOCKER_IMAGE = "vaibhav411007/newbank-app"
+        REGISTRY = "docker.io"
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
-                git branch: 'main',
+                git branch: "${params.GIT_BRANCH}",
                 url: 'https://github.com/iamvaibhavsutar/NewBank.git'
             }
         }
 
-        stage('Build') {
+        stage('Build Backend') {
+            agent {
+                docker { image 'maven:3.9.9-eclipse-temurin-21' }
+            }
             steps {
                 sh 'mvn clean package -DskipTests'
             }
@@ -22,7 +31,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t $DOCKER_IMAGE:latest ."
+                script {
+                    IMAGE_FULL = "${REGISTRY}/${params.IMAGE_NAME}:${params.IMAGE_TAG}"
+                }
+                sh '''
+                docker build --no-cache -t $IMAGE_FULL .
+                '''
             }
         }
 
@@ -30,19 +44,34 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'USER',
-                    passwordVariable: 'PASS'
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
-                    sh "docker push $DOCKER_IMAGE:latest"
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $IMAGE_FULL
+                    '''
                 }
             }
         }
 
         stage('Trigger Deployment') {
             steps {
-                build job: 'newbank-deployment-pipeline'
+                build job: 'Newbank_deployment',
+                parameters: [
+                    string(name: 'IMAGE_NAME', value: params.IMAGE_NAME),
+                    string(name: 'IMAGE_TAG', value: params.IMAGE_TAG)
+                ]
             }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Production Pipeline Successful!"
+        }
+        failure {
+            echo "❌ Production Pipeline Failed!"
         }
     }
 }
