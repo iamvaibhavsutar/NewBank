@@ -34,15 +34,13 @@ pipeline {
 }
 
         stage('Build Docker Image') {
-            steps {
-                script {
-                    IMAGE_FULL = "${REGISTRY}/${params.IMAGE_NAME}:${params.IMAGE_TAG}"
-                }
-                sh '''
-                docker build --no-cache -t $IMAGE_FULL .
-                '''
-            }
+    steps {
+        script {
+            def image = "${params.IMAGE_NAME}:${params.IMAGE_TAG}"
+            sh "docker build --no-cache -t ${image} ."
         }
+    }
+}
 
         stage('Push Image') {
             steps {
