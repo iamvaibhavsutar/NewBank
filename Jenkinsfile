@@ -42,12 +42,16 @@ pipeline {
         stage('Build UI (Dockerized Node)') {
             steps {
                 sh '''
+                mkdir -p NewBank-UI/.npm
+
                 docker run --rm \
                 -u $(id -u):$(id -g) \
+                -e HOME=/tmp \
                 -v $PWD/NewBank-UI:/app \
+                -v $PWD/NewBank-UI/.npm:/tmp/.npm \
                 -w /app \
                 node:20 \
-                sh -c "npm install && npm run build"
+                sh -c "npm install --cache /tmp/.npm && npm run build"
                 '''
             }
         }
@@ -63,7 +67,7 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-cred',
+                    credentialsId: 'dockerhub-creds',   // ✅ FIXED
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
