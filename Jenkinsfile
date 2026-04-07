@@ -1,19 +1,13 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven3'
-        jdk 'JDK17'
-    }
-
     environment {
         DOCKER_IMAGE = "vaibhav411007/newbank-app"
-        DOCKER_TAG = "latest"
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
                 git branch: 'main',
                 url: 'https://github.com/iamvaibhavsutar/NewBank.git'
@@ -26,55 +20,29 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t $DOCKER_IMAGE:$DOCKER_TAG ."
-                }
+                sh "docker build -t $DOCKER_IMAGE:latest ."
             }
         }
 
-        stage('Login to DockerHub') {
+        stage('Push Image') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
                 )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    sh "docker push $DOCKER_IMAGE:latest"
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Trigger Deployment') {
             steps {
-                sh "docker push $DOCKER_IMAGE:$DOCKER_TAG"
+                build job: 'newbank-deployment-pipeline'
             }
-        }
-
-        stage('Deploy Container') {
-            steps {
-                sh """
-                docker stop newbank-container || true
-                docker rm newbank-container || true
-                docker run -d -p 0:8080 --name newbank-container $DOCKER_IMAGE:$DOCKER_TAG
-                """
-            }
-        }
-    }
-
-    post {
-        success {
-            echo '✅ Deployment Successful!'
-        }
-        failure {
-            echo '❌ Pipeline Failed!'
         }
     }
 }
