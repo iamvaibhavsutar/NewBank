@@ -21,13 +21,17 @@ pipeline {
         }
 
         stage('Build Backend') {
-            agent {
-                docker { image 'maven:3.9.9-eclipse-temurin-21' }
-            }
-            steps {
-                sh 'mvn clean package -DskipTests'
-            }
-        }
+    steps {
+        sh '''
+        docker run --rm \
+        -v $PWD:/app \
+        -v $PWD/.m2:/root/.m2 \
+        -w /app \
+        maven:3.9.9-eclipse-temurin-21 \
+        mvn clean package -DskipTests
+        '''
+    }
+}
 
         stage('Build Docker Image') {
             steps {
