@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "vaibhav411007/newbank-app"
+        IMAGE_NAME = "vaibhav411007/newbank-backend"
         IMAGE_TAG = "${BUILD_NUMBER}"
         IMAGE_FULL = "${IMAGE_NAME}:${IMAGE_TAG}"
     }
@@ -10,12 +10,10 @@ pipeline {
     stages {
 
         stage('Clean Workspace') {
-            steps {
-                cleanWs()
-            }
+            steps { cleanWs() }
         }
 
-        stage('Checkout Code') {
+        stage('Checkout Backend Code') {
             steps {
                 git branch: 'main',
                 url: 'https://github.com/iamvaibhavsutar/NewBank.git'
@@ -39,35 +37,16 @@ pipeline {
             }
         }
 
-        stage('Build UI (Dockerized Node)') {
-            steps {
-                sh '''
-                mkdir -p NewBank-UI/.npm
-
-                docker run --rm \
-                -u $(id -u):$(id -g) \
-                -e HOME=/tmp \
-                -v $PWD/NewBank-UI:/app \
-                -v $PWD/NewBank-UI/.npm:/tmp/.npm \
-                -w /app \
-                node:20 \
-                sh -c "npm install --cache /tmp/.npm && npm run build"
-                '''
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build --no-cache -t $IMAGE_FULL .
-                '''
+                sh 'docker build --no-cache -t $IMAGE_FULL .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',   // ✅ FIXED
+                    credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
@@ -79,34 +58,15 @@ pipeline {
             }
         }
 
-        stage('Checkout Deployment Repo') {
+        stage('Trigger UI Pipeline') {
             steps {
-                dir('deployment') {
-                    git branch: 'main',
-                    url: 'https://github.com/iamvaibhavsutar/newbank-deployment.git'
-                }
-            }
-        }
-
-        stage('Deploy via Docker Compose') {
-            steps {
-                dir('deployment') {
-                    sh '''
-                    export IMAGE=$IMAGE_FULL
-                    docker-compose down || true
-                    docker-compose up -d
-                    '''
-                }
+                build job: 'Newbank_UI'
             }
         }
     }
 
     post {
-        success {
-            echo "✅ FULL CI/CD PIPELINE SUCCESS"
-        }
-        failure {
-            echo "❌ PIPELINE FAILED - CHECK LOGS"
-        }
+        success { echo "✅ Backend Build Success" }
+        failure { echo "❌ Backend Failed" }
     }
 }
