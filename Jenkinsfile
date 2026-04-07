@@ -1,51 +1,65 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'IMAGE_NAME', defaultValue: 'vaibhav411007/newbank-app', description: 'Docker Image Name')
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker Image Tag')
-        string(name: 'GIT_BRANCH', defaultValue: 'main', description: 'Git Branch')
-    }
-
     environment {
-        REGISTRY = "docker.io"
+        IMAGE_NAME = "vaibhav411007/newbank-app"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_FULL = "${IMAGE_NAME}:${IMAGE_TAG}"
     }
 
     stages {
 
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Checkout Code') {
             steps {
-                git branch: "${params.GIT_BRANCH}",
+                git branch: 'main',
                 url: 'https://github.com/iamvaibhavsutar/NewBank.git'
             }
         }
 
-        stage('Build Backend') {
-    steps {
-        sh '''
-        docker run --rm \
-        -v $PWD:/app \
-        -v $PWD/.m2:/root/.m2 \
-        -w /app \
-        maven:3.9.9-eclipse-temurin-21 \
-        mvn clean package -DskipTests
-        '''
-    }
-}
+        stage('Build Backend (Dockerized Maven)') {
+            steps {
+                sh '''
+                docker run --rm \
+                -u $(id -u):$(id -g) \
+                -v $PWD:/app \
+                -w /app \
+                maven:3.9.9-eclipse-temurin-21 \
+                mvn clean package -DskipTests
+                '''
+            }
+        }
+
+        stage('Build UI (Dockerized Node)') {
+            steps {
+                sh '''
+                docker run --rm \
+                -u $(id -u):$(id -g) \
+                -v $PWD/NewBank-UI:/app \
+                -w /app \
+                node:20 \
+                sh -c "npm install && npm run build"
+                '''
+            }
+        }
 
         stage('Build Docker Image') {
-    steps {
-        script {
-            def image = "${params.IMAGE_NAME}:${params.IMAGE_TAG}"
-            sh "docker build --no-cache -t ${image} ."
+            steps {
+                sh '''
+                docker build --no-cache -t $IMAGE_FULL .
+                '''
+            }
         }
-    }
-}
 
-        stage('Push Image') {
+        stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
+                    credentialsId: 'dockerhub-creds',   // ✅ FIXED HERE
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
@@ -57,23 +71,34 @@ pipeline {
             }
         }
 
-        stage('Trigger Deployment') {
+        stage('Checkout Deployment Repo') {
             steps {
-                build job: 'Newbank_deployment',
-                parameters: [
-                    string(name: 'IMAGE_NAME', value: params.IMAGE_NAME),
-                    string(name: 'IMAGE_TAG', value: params.IMAGE_TAG)
-                ]
+                dir('deployment') {
+                    git branch: 'main',
+                    url: 'https://github.com/iamvaibhavsutar/newbank-deployment.git'
+                }
+            }
+        }
+
+        stage('Deploy via Docker Compose') {
+            steps {
+                dir('deployment') {
+                    sh '''
+                    export IMAGE=$IMAGE_FULL
+                    docker-compose down || true
+                    docker-compose up -d
+                    '''
+                }
             }
         }
     }
 
     post {
         success {
-            echo "✅ Production Pipeline Successful!"
+            echo "✅ FULL CI/CD PIPELINE SUCCESS"
         }
         failure {
-            echo "❌ Production Pipeline Failed!"
+            echo "❌ PIPELINE FAILED - CHECK LOGS"
         }
     }
 }
